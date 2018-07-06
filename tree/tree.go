@@ -3,6 +3,8 @@ package tree
 import (
 	"encoding/binary"
 	"fmt"
+
+	hashing "github.com/suizman/htree/utils/hashing"
 )
 
 type Tree struct {
@@ -17,11 +19,15 @@ type Event struct {
 	Event []byte
 }
 
-func (t *Tree) Add(Digest, Version []byte) ([]byte, error) {
+func (t *Tree) Add(Event, Version []byte) ([]byte, error) {
 
-	rootDigest, err := Digest, Version
+	hasher := new(hashing.Sha256Hasher)
+
+	eventDigest := hasher.Do(Event)
+	rootDigest, err := eventDigest, Version
+
 	if err != nil {
-		fmt.Errorf("Unable to add event %v:\n", err)
+		return nil, fmt.Errorf("Unable to add event %v", err)
 	}
 
 	return rootDigest, nil
