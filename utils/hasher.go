@@ -1,8 +1,7 @@
-package main
+package hasher
 
 import (
 	"crypto/sha256"
-	"fmt"
 )
 
 type Hasher interface {
@@ -19,15 +18,4 @@ func (s Sha256Hasher) Do(data ...[]byte) []byte {
 	}
 
 	return hasher.Sum(nil)[:]
-}
-
-func main() {
-	hasher := new(Sha256Hasher)
-
-	h1 := hasher.Do([]byte("Hello 1"))
-	h2 := hasher.Do([]byte("Hello 2"))
-	hofh := hasher.Do([]byte(h1), []byte(h2))
-	fmt.Printf("Hash 1: %x\n", h1)
-	fmt.Printf("Hash 2: %x\n", h2)
-	fmt.Printf("Hofh  : %x\n", hofh)
 }
