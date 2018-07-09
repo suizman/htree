@@ -2,7 +2,6 @@ package tree
 
 import (
 	"encoding/binary"
-	"fmt"
 
 	hashing "github.com/suizman/htree/utils/hashing"
 )
@@ -19,18 +18,22 @@ type Event struct {
 	Event []byte
 }
 
-func (t *Tree) Add(Event, Version []byte) ([]byte, error) {
+func (t *Tree) Add(Event, Version []byte) []byte {
 
 	hasher := new(hashing.Sha256Hasher)
 
 	eventDigest := hasher.Do(Event)
-	rootDigest, err := eventDigest, Version
 
-	if err != nil {
-		return nil, fmt.Errorf("Unable to add event %v", err)
+	return eventDigest
+}
+
+func NewTree(id string) *Tree {
+
+	tree := &Tree{
+		[]byte(id),
 	}
 
-	return rootDigest, nil
+	return tree
 }
 
 // uInt64AsBytes returns the []byte representation of a unit64
