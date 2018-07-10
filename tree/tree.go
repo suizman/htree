@@ -7,18 +7,27 @@ import (
 )
 
 type Tree struct {
-	treeId []byte
+	treeId  []byte
+	version uint64
+	node    Node
 }
-
 type Node struct {
-	Leaf uint64
+	position map[Pos]Digest
+}
+type Digest struct {
+	value []byte
 }
 
 type Event struct {
-	Event []byte
+	event []byte
 }
 
-func (t *Tree) Add(Event, Version []byte) []byte {
+type Pos struct {
+	index uint64
+	layer uint64
+}
+
+func (t *Tree) Add(Event, version []byte) []byte {
 
 	hasher := new(hashing.Sha256Hasher)
 
@@ -27,10 +36,12 @@ func (t *Tree) Add(Event, Version []byte) []byte {
 	return eventDigest
 }
 
-func NewTree(id string) *Tree {
+func NewTree(id string, version uint64, node Node) *Tree {
 
 	tree := &Tree{
 		[]byte(id),
+		version,
+		node,
 	}
 
 	return tree

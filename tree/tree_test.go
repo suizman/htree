@@ -7,7 +7,18 @@ import (
 
 func TestAdd(t *testing.T) {
 
-	tree := &Tree{[]byte("tree-fake-id")}
+	position := make(map[Pos]Digest)
+
+	node := Node{
+		position,
+	}
+
+	tree := NewTree(
+		"barbol",
+		0,
+		node,
+	)
+
 	event := []byte("Test event")
 
 	digest := tree.Add(event, []byte("0"))
@@ -17,6 +28,17 @@ func TestAdd(t *testing.T) {
 
 func TestNewTree(t *testing.T) {
 
-	tree := NewTree("barbol")
-	fmt.Printf("This is your new tree %s\n", tree)
+	position := make(map[Pos]Digest)
+
+	node := Node{
+		position,
+	}
+
+	tree := NewTree(
+		"barbol",
+		0,
+		node,
+	)
+
+	fmt.Printf("This is your new tree id: %s, version: %v, position: %x\n", tree.treeId, tree.version, tree.node)
 }
