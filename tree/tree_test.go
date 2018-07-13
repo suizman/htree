@@ -7,38 +7,42 @@ import (
 
 func TestAdd(t *testing.T) {
 
-	position := make(map[Pos]Digest)
-
-	node := Node{
-		position,
+	store := Node{
+		hashoff: make(map[Pos]Digest),
 	}
 
 	tree := NewTree(
 		"barbol",
 		0,
-		node,
+		store,
 	)
 
-	event := []byte("Test event")
+	events := []struct {
+		event []byte
+	}{
+		{[]byte{0x0}},
+		{[]byte{0x1}},
+		{[]byte{0x2}},
+	}
 
-	digest := tree.Add(event, []byte("0"))
-
-	fmt.Printf("New digest created %x\n", digest)
+	for i, c := range events {
+		index := uint64(i)
+		digest := tree.Add(c.event, uInt64AsBytes(index))
+		fmt.Printf("New digest created %x store: %v\n", digest, store)
+	}
 }
 
 func TestNewTree(t *testing.T) {
 
-	position := make(map[Pos]Digest)
-
-	node := Node{
-		position,
+	store := Node{
+		hashoff: make(map[Pos]Digest),
 	}
 
 	tree := NewTree(
 		"barbol",
 		0,
-		node,
+		store,
 	)
 
-	fmt.Printf("This is your new tree id: %s, version: %v, position: %x\n", tree.treeId, tree.version, tree.node)
+	fmt.Printf("This is your new tree id: %s, version: %v, position: %x\n", tree.treeId, tree.version, tree.store)
 }

@@ -3,16 +3,16 @@ package tree
 import (
 	"encoding/binary"
 
-	hashing "github.com/suizman/htree/utils/hashing"
+	"github.com/bbva/qed/hashing"
 )
 
 type Tree struct {
 	treeId  []byte
 	version uint64
-	node    Node
+	store   Node
 }
 type Node struct {
-	position map[Pos]Digest
+	hashoff map[Pos]Digest
 }
 type Digest struct {
 	value []byte
@@ -31,20 +31,22 @@ func (t *Tree) Add(Event, version []byte) []byte {
 
 	hasher := new(hashing.Sha256Hasher)
 
-	eventDigest := hasher.Do(Event)
+	eventDigest := hasher.Do(Event, version)
+
+	position := Pos{
+		index: 0,
+		layer: 0,
+	}
+
+	t.store.hashoff[position] = Digest{value: eventDigest}
 
 	return eventDigest
 }
 
-func NewTree(id string, version uint64, node Node) *Tree {
+func NewTree(id string, version uint64, store Node) *Tree {
 
-	tree := &Tree{
-		[]byte(id),
-		version,
-		node,
-	}
+	return &Tree{[]byte(id), version, store}
 
-	return tree
 }
 
 // uInt64AsBytes returns the []byte representation of a unit64
