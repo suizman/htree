@@ -34,9 +34,8 @@ type Pos struct {
 func (t *Tree) Add(Event []byte) []byte {
 
 	t.version++
-	hasher := new(hasher.Sha256Hasher)
 
-	eventDigest := hasher.Do(Event)
+	eventDigest := t.hasher.Do(Event)
 
 	return eventDigest
 }
