@@ -47,21 +47,6 @@ func TestNewTree(t *testing.T) {
 	fmt.Printf("This is your new tree id: %s, version: %v, position: %x\n", tree.treeId, tree.version, tree.store)
 }
 
-func TestTravel(t *testing.T) {
-
-	pos := Pos{
-		index: 0,
-		layer: 1,
-	}
-
-	travel := Travel(1, pos)
-
-	fmt.Println(travel)
-	// if travel == false {
-	// 	t.Errorf("Error: %v\n", travel)
-	// }
-}
-
 func TestGetDepth(t *testing.T) {
 	depth := getDepth(3)
 	fmt.Printf("Actual depth: %v\n", depth)

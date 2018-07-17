@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/bbva/qed/hashing"
+	"github.com/suizman/htree/utils/hashing"
 )
 
 type Tree struct {
 	treeId  []byte
 	version uint64
+	hasher  hasher.Hasher
 	store   Node
 }
 
@@ -30,54 +31,84 @@ type Pos struct {
 	layer uint64
 }
 
-func (t *Tree) Add(Event, version []byte) []byte {
+func (t *Tree) Add(Event []byte) []byte {
 
-	hasher := new(hashing.Sha256Hasher)
+	t.version++
+	hasher := new(hasher.Sha256Hasher)
 
-	eventDigest := hasher.Do(Event, version)
-
-	position := Pos{
-		index: 0,
-		layer: 0,
-	}
-
-	t.store.hashoff[position] = Digest{value: eventDigest}
+	eventDigest := hasher.Do(Event)
 
 	return eventDigest
 }
 
-func NewTree(id string, version uint64, store Node) *Tree {
+func NewTree(id string, version uint64, hasher hasher.Hasher, store Node) *Tree {
 
-	return &Tree{[]byte(id), version, store}
+	return &Tree{
+		[]byte(id),
+		version,
+		hasher,
+		store,
+	}
 
 }
 
-func Travel(i uint64, p Pos) bool {
+func (t *Tree) add(digest Digest, p Pos) {
 
-	foreverAlone := Pos{
-		index: 0,
-		layer: 0,
+	if p.layer == 0 {
+		fmt.Printf("Leaf node: %v\n", p)
+		t.store.hashoff[p] = digest
+		return
 	}
 
-	if p == foreverAlone {
-		fmt.Printf("First node: %v\n", p)
-		return true
-	}
-
-	if i <= p.layer {
+	if t.version <= p.index+pow(2, p.layer-1) {
 		fmt.Printf("Go left. Index: %v|Layer: %v\n", p.index, p.layer)
-		Travel(i, Pos{
-			index: p.index,
-			layer: p.layer - 1,
-		})
+		t.add(digest, p.Left())
 	} else {
 		fmt.Printf("Go Right. Index: %v|Layer: %v\n", p.index, p.layer)
-		Travel(i, Pos{
-			index: p.index + pow(2, p.layer) - 1,
-			layer: p.layer - 1,
-		})
+		t.add(digest, p.Right())
 	}
-	return true
+
+	l, r := []byte(fmt.Sprint(t.store.hashoff[p.Left()])), []byte(fmt.Sprint(t.store.hashoff[p.Right()]))
+	t.hasher.Do(l, r)
+	// t.hasher.Do(t.store.hashoff[p.Left()], t.store.hashoff[p.Right()])
+	return
+}
+
+func (p *Pos) Left() Pos {
+
+	return Pos{
+		index: p.index,
+		layer: p.layer - 1,
+	}
+
+}
+
+func (p *Pos) Right() Pos {
+
+	return Pos{
+		index: p.index + pow(2, p.layer-1),
+		layer: p.layer - 1,
+	}
+
+}
+
+// v = tree version
+func (t *Tree) Travel(p Pos) {
+
+	if p.layer == 0 {
+		fmt.Printf("Leaf node: %v\n", p)
+		return
+	}
+
+	if t.version <= p.index+pow(2, p.layer-1) {
+		fmt.Printf("Go left. Index: %v|Layer: %v\n", p.index, p.layer)
+		t.Travel(p.Left())
+	} else {
+		fmt.Printf("Go Right. Index: %v|Layer: %v\n", p.index, p.layer)
+		t.Travel(p.Right())
+	}
+
+	return
 }
 
 func getDepth(index uint64) uint64 {
