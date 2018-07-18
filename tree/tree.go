@@ -66,16 +66,16 @@ func NewTree(id string, version uint64, store Node) *Tree {
 func (t *Tree) add(digest Digest, p Pos) {
 
 	if p.layer == 0 {
-		fmt.Printf("Leaf node  => Index: %v | Layer: %v\n", p.index, p.layer)
+		fmt.Printf("Leaf node  => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.store.hashoff[p] = digest
 		return
 	}
 
 	if t.version <= p.index+pow(2, p.layer-1) {
-		fmt.Printf("Go left    => Index: %v | Layer: %v\n", p.index, p.layer)
+		fmt.Printf("Go left    => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.add(digest, p.Left())
 	} else {
-		fmt.Printf("Go right   => Index: %v | Layer: %v\n", p.index, p.layer)
+		fmt.Printf("Go right   => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.add(digest, p.Right())
 	}
 
@@ -114,15 +114,15 @@ func (p *Pos) Right() Pos {
 func (t *Tree) Travel(p Pos) {
 
 	if p.layer == 0 {
-		fmt.Printf("Leaf node: %v\n", p)
+		fmt.Printf("Leaf node  => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		return
 	}
 
 	if t.version <= p.index+pow(2, p.layer-1) {
-		fmt.Printf("Go left. Index: %v|Layer: %v\n", p.index, p.layer)
+		fmt.Printf("Go left    => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.Travel(p.Left())
 	} else {
-		fmt.Printf("Go Right. Index: %v|Layer: %v\n", p.index, p.layer)
+		fmt.Printf("Go right   => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.Travel(p.Right())
 	}
 
