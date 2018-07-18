@@ -35,8 +35,6 @@ type Pos struct {
 
 func (t *Tree) Add(Event []byte) []byte {
 
-	t.version++
-
 	t.hasher.Write(Event)
 
 	eventDigest := Digest{
@@ -48,7 +46,9 @@ func (t *Tree) Add(Event []byte) []byte {
 		layer: t.getDepth(),
 	}
 
+	// Add root digest to tree and increment version.
 	t.add(eventDigest, rootPos)
+	t.version++
 	return eventDigest.value
 }
 
