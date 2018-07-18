@@ -1,17 +1,19 @@
+// DISCLAMER!
+// ALL THE COMMENTS ON THIS CODE ARE POWERED BY DISXELIA
 package tree
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
+	"hash"
 	"math"
-
-	"github.com/suizman/htree/utils/hashing"
 )
 
 type Tree struct {
 	treeId  []byte
 	version uint64
-	hasher  hasher.Hasher
+	hasher  hash.Hash
 	store   Node
 }
 
@@ -35,18 +37,28 @@ func (t *Tree) Add(Event []byte) []byte {
 
 	t.version++
 
-	eventDigest := t.hasher.Do(Event)
+	t.hasher.Write(Event)
 
-	return eventDigest
+	eventDigest := Digest{
+		value: t.hasher.Sum(nil),
+	}
+
+	rootPos := Pos{
+		index: 0,
+		layer: t.getDepth(),
+	}
+
+	t.add(eventDigest, rootPos)
+	return eventDigest.value
 }
 
-func NewTree(id string, version uint64, hasher hasher.Hasher, store Node) *Tree {
+func NewTree(id string, version uint64, store Node) *Tree {
 
 	return &Tree{
-		[]byte(id),
-		version,
-		hasher,
-		store,
+		treeId:  []byte(id),
+		version: version,
+		hasher:  sha256.New(),
+		store:   store,
 	}
 
 }
@@ -54,22 +66,29 @@ func NewTree(id string, version uint64, hasher hasher.Hasher, store Node) *Tree 
 func (t *Tree) add(digest Digest, p Pos) {
 
 	if p.layer == 0 {
-		fmt.Printf("Leaf node: %v\n", p)
+		fmt.Printf("Leaf node  => Index: %v | Layer: %v\n", p.index, p.layer)
 		t.store.hashoff[p] = digest
 		return
 	}
 
 	if t.version <= p.index+pow(2, p.layer-1) {
-		fmt.Printf("Go left. Index: %v|Layer: %v\n", p.index, p.layer)
+		fmt.Printf("Go left    => Index: %v | Layer: %v\n", p.index, p.layer)
 		t.add(digest, p.Left())
 	} else {
-		fmt.Printf("Go Right. Index: %v|Layer: %v\n", p.index, p.layer)
+		fmt.Printf("Go right   => Index: %v | Layer: %v\n", p.index, p.layer)
 		t.add(digest, p.Right())
 	}
 
-	l, r := []byte(fmt.Sprint(t.store.hashoff[p.Left()])), []byte(fmt.Sprint(t.store.hashoff[p.Right()]))
-	t.hasher.Do(l, r)
-	// t.hasher.Do(t.store.hashoff[p.Left()], t.store.hashoff[p.Right()])
+	// Make array with left and right child
+	rl := make([]byte, 2*sha256.Size)
+	copy(rl, t.store.hashoff[p.Left()].value)
+	rl = append(rl, t.store.hashoff[p.Right()].value...)
+
+	// Recompute hash for actual on node
+	t.hasher.Write(rl)
+	t.store.hashoff[p] = Digest{
+		value: []byte(t.hasher.Sum(nil)),
+	}
 	return
 }
 
@@ -110,8 +129,8 @@ func (t *Tree) Travel(p Pos) {
 	return
 }
 
-func getDepth(index uint64) uint64 {
-	return uint64(math.Ceil(math.Log2(float64(index + 1))))
+func (t *Tree) getDepth() uint64 {
+	return uint64(math.Ceil(math.Log2(float64(t.version + 1))))
 }
 
 // Utility to calculate arbitraty pow and return an int64

@@ -3,8 +3,6 @@ package tree
 import (
 	"fmt"
 	"testing"
-
-	"github.com/suizman/htree/utils/hashing"
 )
 
 func TestAdd(t *testing.T) {
@@ -13,12 +11,9 @@ func TestAdd(t *testing.T) {
 		hashoff: make(map[Pos]Digest),
 	}
 
-	hasher := new(hasher.Sha256Hasher)
-
 	tree := NewTree(
 		"barbol",
 		0,
-		hasher,
 		store,
 	)
 
@@ -33,7 +28,7 @@ func TestAdd(t *testing.T) {
 	for i, c := range events {
 		i++
 		digest := tree.Add(c.event)
-		fmt.Printf("New digest created %x store: %v\n", digest, store)
+		fmt.Printf("New digest created %x\n", digest)
 	}
 }
 
@@ -42,11 +37,10 @@ func TestNewTree(t *testing.T) {
 	store := Node{
 		hashoff: make(map[Pos]Digest),
 	}
-	hasher := new(hasher.Sha256Hasher)
+
 	tree := NewTree(
 		"barbol",
 		0,
-		hasher,
 		store,
 	)
 
@@ -54,6 +48,17 @@ func TestNewTree(t *testing.T) {
 }
 
 func TestGetDepth(t *testing.T) {
-	depth := getDepth(3)
+	store := Node{
+		hashoff: make(map[Pos]Digest),
+	}
+
+	tree := NewTree(
+		"barbol",
+		0,
+		store,
+	)
+
+	depth := tree.getDepth()
+
 	fmt.Printf("Actual depth: %v\n", depth)
 }
