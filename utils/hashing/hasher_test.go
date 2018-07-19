@@ -14,7 +14,7 @@ func TestHasher(t *testing.T) {
 	hasher := new(Sha256Hasher)
 	digest := hasher.Do([]byte("This is a test"))
 	require.Equal(t, expectedDigest, digest, "Invalid digest:")
-	t.Logf("\nExpected digest: %x\nGenerated digest:%x\n", expectedDigest, expectedDigest)
+	t.Logf("\nExpected digest: %x\nGenerated digest:%x\n", expectedDigest, digest)
 }
 
 func BenchmarkHasher(b *testing.B) {
