@@ -1,7 +1,9 @@
 package hasher
 
 import (
+	"bytes"
 	"crypto/sha256"
+	"fmt"
 )
 
 type Hasher interface {
@@ -18,4 +20,18 @@ func (s Sha256Hasher) Do(data ...[]byte) []byte {
 	}
 
 	return hasher.Sum(nil)[:]
+}
+
+func StringHash(s string) string {
+
+	var b bytes.Buffer
+
+	for i := 0; i < len(s); i++ {
+		data := fmt.Sprintf("%#x", s[i:i+2])
+		b.WriteString(data)
+		i = i + 1
+	}
+
+	data := fmt.Sprintf("%v", b.String())
+	return data
 }
