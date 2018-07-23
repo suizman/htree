@@ -17,6 +17,18 @@ func TestHasher(t *testing.T) {
 	t.Logf("\nExpected digest: %x\nGenerated digest:%x\n", expectedDigest, digest)
 }
 
+func TestNewHashahin(t *testing.T) {
+
+	expectedDigest := []byte{0xbd, 0x81, 0x43, 0xdb, 0x4e, 0x6c, 0x9e, 0xa6, 0xe3, 0x88, 0x19, 0x31, 0xc3, 0x5b, 0x71, 0xda, 0xd7, 0xe0, 0x74, 0xff, 0xbe, 0x5d, 0x6e, 0xc, 0xa8, 0xe7, 0xfe, 0x18, 0x86, 0xf4, 0x7b, 0x60}
+
+	hasher := NewHashahin()
+	hasher.h.Write([]byte("Hello Mr. Hashashin."))
+	digest := hasher.h.Sum(nil)
+
+	require.Equal(t, expectedDigest, digest, "Invalid digest:")
+	t.Logf("\nExpected digest: %x\nGenerated digest:%x\n", expectedDigest, digest)
+}
+
 func BenchmarkHasher(b *testing.B) {
 
 	hasher := new(Sha256Hasher)
@@ -24,5 +36,27 @@ func BenchmarkHasher(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		event := fmt.Sprintf("Test event: %v", i)
 		hasher.Do([]byte(event))
+	}
+}
+
+func BenchmarkQedHasher(b *testing.B) {
+
+	hasher := new(Sha256Hasher)
+	b.N = 50000000
+
+	for i := 0; i < b.N; i++ {
+		event := fmt.Sprintf("Test event: %v", i)
+		hasher.Do([]byte(event))
+	}
+}
+
+func BenchmarkQedHasherV2(b *testing.B) {
+
+	hasher := NewHashahin()
+	b.N = 50000000
+
+	for i := 0; i < b.N; i++ {
+		hasher.h.Write([]byte("Hello Mr. Hashashin."))
+		hasher.h.Sum(nil)
 	}
 }

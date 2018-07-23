@@ -2,7 +2,12 @@ package hasher
 
 import (
 	"crypto/sha256"
+	"hash"
 )
+
+type Hashashin struct {
+	h hash.Hash
+}
 
 type Hasher interface {
 	Do(...[]byte) []byte
@@ -18,4 +23,8 @@ func (s Sha256Hasher) Do(data ...[]byte) []byte {
 	}
 
 	return hasher.Sum(nil)[:]
+}
+
+func NewHashahin() *Hashashin {
+	return &Hashashin{h: sha256.New()}
 }
