@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"testing"
 )
@@ -23,13 +24,16 @@ func TestAdd(t *testing.T) {
 		{[]byte{0x0}},
 		{[]byte{0x1}},
 		{[]byte{0x2}},
+		{[]byte{0x3}},
+		{[]byte{0x4}},
 	}
 
 	for i, c := range events {
 		i++
 		digest := tree.Add(c.event)
-		fmt.Printf("New digest created %x\n", digest)
+		fmt.Printf("New root digest created: %x\n", digest)
 	}
+
 }
 
 func TestNewTree(t *testing.T) {
@@ -47,6 +51,40 @@ func TestNewTree(t *testing.T) {
 	fmt.Printf("This is your new tree id: %s, version: %v, position: %x\n", tree.treeId, tree.version, tree.store)
 }
 
+func TestAuditPath(t *testing.T) {
+	store := Node{
+		hashoff: make(map[Pos]Digest),
+	}
+
+	tree := NewTree(
+		"barbol",
+		0,
+		store,
+	)
+
+	events := []struct {
+		event []byte
+	}{
+		{[]byte{0x0}},
+		{[]byte{0x1}},
+	}
+
+	expectedV1 := Tree{
+		treeId:  []byte("barbol"),
+		version: 1,
+		hasher:  sha256.New(),
+		store: Node{
+			hashoff: make(map[Pos]Digest),
+		},
+	}
+
+	fmt.Println(expectedV1)
+	for i, c := range events {
+		i++
+		tree.Add(c.event)
+	}
+}
+
 func TestGetDepth(t *testing.T) {
 	store := Node{
 		hashoff: make(map[Pos]Digest),
@@ -61,4 +99,24 @@ func TestGetDepth(t *testing.T) {
 	depth := tree.getDepth()
 
 	fmt.Printf("Actual depth: %v\n", depth)
+}
+
+func TestGetVersion(t *testing.T) {
+	store := Node{
+		hashoff: make(map[Pos]Digest),
+	}
+
+	tree := NewTree(
+		"barbol",
+		0,
+		store,
+	)
+
+	for i := 0; i < 10; i++ {
+		tree.version++
+	}
+
+	version := tree.GetVersion()
+
+	fmt.Printf("Actual version: %v\n", version)
 }

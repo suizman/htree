@@ -17,6 +17,14 @@ type Tree struct {
 	store   Node
 }
 
+type Proof struct {
+	result bool
+}
+
+type Audit struct {
+	path map[string][]byte
+}
+
 type Node struct {
 	hashoff map[Pos]Digest
 }
@@ -37,7 +45,7 @@ func (t *Tree) Add(Event []byte) []byte {
 
 	t.hasher.Write(Event)
 
-	eventDigest := Digest{
+	rootDigest := Digest{
 		value: t.hasher.Sum(nil),
 	}
 
@@ -47,9 +55,9 @@ func (t *Tree) Add(Event []byte) []byte {
 	}
 
 	// Add root digest to tree and increment version.
-	t.add(eventDigest, rootPos)
+	t.add(rootDigest, rootPos)
 	t.version++
-	return eventDigest.value
+	return rootDigest.value
 }
 
 func NewTree(id string, version uint64, store Node) *Tree {
@@ -92,6 +100,15 @@ func (t *Tree) add(digest Digest, p Pos) {
 	return
 }
 
+func (p *Proof) GenProof() bool {
+	return p.result
+}
+
+func (t Tree) AuditPath(index, version uint64) *Tree {
+
+	return &Tree{}
+}
+
 func (p *Pos) Left() Pos {
 
 	return Pos{
@@ -108,6 +125,10 @@ func (p *Pos) Right() Pos {
 		layer: p.layer - 1,
 	}
 
+}
+
+func (t *Tree) GetVersion() uint64 {
+	return t.version
 }
 
 // v = tree version
