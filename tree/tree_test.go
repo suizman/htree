@@ -1,7 +1,6 @@
 package tree
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"testing"
 )
@@ -51,7 +50,7 @@ func TestNewTree(t *testing.T) {
 	fmt.Printf("This is your new tree id: %s, version: %v, position: %x\n", tree.treeId, tree.version, tree.store)
 }
 
-func TestAuditPath(t *testing.T) {
+func TestMembershipGen(t *testing.T) {
 	store := Node{
 		hashoff: make(map[Pos]Digest),
 	}
@@ -67,21 +66,27 @@ func TestAuditPath(t *testing.T) {
 	}{
 		{[]byte{0x0}},
 		{[]byte{0x1}},
+		{[]byte{0x2}},
 	}
 
-	expectedV1 := Tree{
-		treeId:  []byte("barbol"),
-		version: 1,
-		hasher:  sha256.New(),
-		store: Node{
-			hashoff: make(map[Pos]Digest),
-		},
-	}
-
-	fmt.Println(expectedV1)
 	for i, c := range events {
 		i++
 		tree.Add(c.event)
+	}
+
+	// expectedV1 := Tree{
+	// 	treeId:  []byte("barbol"),
+	// 	version: 1,
+	// 	hasher:  sha256.New(),
+	// 	store: Node{
+	// 		hashoff: make(map[Pos]Digest),
+	// 	},
+	// }
+
+	_, err := tree.MembershipGen(5, 0, 5)
+
+	if err != nil {
+		t.Fatalf("Error: %v\n", err)
 	}
 }
 

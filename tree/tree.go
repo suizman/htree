@@ -5,6 +5,7 @@ package tree
 import (
 	"crypto/sha256"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"hash"
 	"math"
@@ -17,12 +18,10 @@ type Tree struct {
 	store   Node
 }
 
+type Audit map[Pos]string
+
 type Proof struct {
 	result bool
-}
-
-type Audit struct {
-	path map[string][]byte
 }
 
 type Node struct {
@@ -104,9 +103,48 @@ func (p *Proof) GenProof() bool {
 	return p.result
 }
 
-func (t Tree) AuditPath(index, version uint64) *Tree {
+func (t Tree) MembershipGen(index, layer, version uint64) (*Audit, error) {
 
-	return &Tree{}
+	store := Audit{}
+	if index < 0 || index > version {
+		return &store, errors.New("Invalid index, 0 <= index <= version")
+	}
+
+	if index == 0 && version == 0 {
+		store[Pos{index: index, layer: version}] = "digest" // digest from actual tree
+		fmt.Println(store)
+		return &store, nil
+	}
+
+	// if Odd(index) == true && layer > 0 {
+	// 	store[Pos{index: index, layer: layer}] = "digest" // digest from actual tree
+	// 	fmt.Printf("Right Leaf: %v\n", store)
+	// 	index--
+	// 	t.MembershipGen(index, layer, version)
+	// }
+
+	// if version >= index && layer >= 1 {
+	// 	fmt.Println("YOLO")
+	// }
+
+	if Even(index) == true && layer == 0 {
+		store[Pos{index: index, layer: layer}] = "digest" // digest from actual tree
+		fmt.Printf("Left Leaf: %v\n", store)
+		t.MembershipGen(index, layer+1, version)
+	} else {
+		store[Pos{index: index, layer: layer}] = "digest" // digest from actual tree
+		fmt.Printf("Right Leaf: %v\n", store)
+		index--
+		t.MembershipGen(index, 0, version)
+	}
+
+	// if Even(index) == true && layer > 1 {
+	// 	store[Pos{index: index, layer: layer}] = "digest" // digest from actual tree
+	// 	fmt.Printf("Left Leaf: %v\n", store)
+	// 	t.MembershipGen(index, layer+1, version)
+	// }
+
+	return &store, nil
 }
 
 func (p *Pos) Left() Pos {
@@ -125,6 +163,17 @@ func (p *Pos) Right() Pos {
 		layer: p.layer - 1,
 	}
 
+}
+
+func Even(number uint64) bool {
+	return number%2 == 0
+}
+
+func Odd(number uint64) bool {
+	// Odd should return not even.
+	// ... We cannot check for 1 remainder.
+	// ... That fails for negative numbers.
+	return !Even(number)
 }
 
 func (t *Tree) GetVersion() uint64 {
