@@ -81,6 +81,7 @@ func (t *Tree) add(digest Digest, p Pos) {
 	if t.version <= p.index+pow(2, p.layer-1) {
 		fmt.Printf("Go left    => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.add(digest, p.Left())
+
 	} else {
 		fmt.Printf("Go right   => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.add(digest, p.Right())
@@ -99,50 +100,46 @@ func (t *Tree) add(digest Digest, p Pos) {
 	return
 }
 
-func (p *Proof) GenProof() bool {
-	return p.result
+func (t *Tree) GenProof(index uint64, commitment []byte) bool {
+	// version := index
+	depth := t.getDepth()
+	rootPos := Pos{index: 0, layer: depth}
+	t.MembershipGen(depth, rootPos)
+	return true
+	// return bytes.Equal(expectedCommitment, commitment)
 }
 
-func (t Tree) MembershipGen(index, layer, version uint64) (*Audit, error) {
+func (t Tree) MembershipGen(depth uint64, p Pos) (*Audit, error) {
 
 	store := Audit{}
-	if index < 0 || index > version {
+
+	if p.index < 0 || p.index > t.version {
 		return &store, errors.New("Invalid index, 0 <= index <= version")
 	}
 
-	if index == 0 && version == 0 {
-		store[Pos{index: index, layer: version}] = "digest" // digest from actual tree
-		fmt.Println(store)
-		return &store, nil
+	if p.layer == 0 && p.index == 0 {
+		fmt.Println("if1")
+		store[Pos{index: p.index, layer: p.layer}] = "digest" // digest from actual tree
+		fmt.Printf("%v %v\n", store, depth)
+		//p.layer++
+		// return nil, nil
+		// os.Exit(0)
+		t.MembershipGen(depth-1, p)
 	}
 
-	// if Odd(index) == true && layer > 0 {
-	// 	store[Pos{index: index, layer: layer}] = "digest" // digest from actual tree
-	// 	fmt.Printf("Right Leaf: %v\n", store)
-	// 	index--
-	// 	t.MembershipGen(index, layer, version)
-	// }
-
-	// if version >= index && layer >= 1 {
-	// 	fmt.Println("YOLO")
-	// }
-
-	if Even(index) == true && layer == 0 {
-		store[Pos{index: index, layer: layer}] = "digest" // digest from actual tree
-		fmt.Printf("Left Leaf: %v\n", store)
-		t.MembershipGen(index, layer+1, version)
+	// fmt.Println(index + pow(2, layer-1))
+	// fmt.Println(uint64(math.Ceil(math.Log2(float64(t.version + 1)))))
+	if t.version <= p.layer {
+		fmt.Println("if2")
+		store[Pos{index: p.index, layer: p.layer}] = "digest" // digest from actual tree
+		fmt.Printf("Left Leaf: %v,%v\n", store, depth)
+		t.MembershipGen(depth-1, p.Left())
 	} else {
-		store[Pos{index: index, layer: layer}] = "digest" // digest from actual tree
-		fmt.Printf("Right Leaf: %v\n", store)
-		index--
-		t.MembershipGen(index, 0, version)
+		fmt.Println("if3")
+		store[Pos{index: p.index, layer: p.layer}] = "digest" // digest from actual tree
+		fmt.Printf("Right Leaf: %v,%v\n", store, depth)
+		t.MembershipGen(depth-1, p.Right())
 	}
-
-	// if Even(index) == true && layer > 1 {
-	// 	store[Pos{index: index, layer: layer}] = "digest" // digest from actual tree
-	// 	fmt.Printf("Left Leaf: %v\n", store)
-	// 	t.MembershipGen(index, layer+1, version)
-	// }
 
 	return &store, nil
 }

@@ -50,7 +50,7 @@ func TestNewTree(t *testing.T) {
 	fmt.Printf("This is your new tree id: %s, version: %v, position: %x\n", tree.treeId, tree.version, tree.store)
 }
 
-func TestMembershipGen(t *testing.T) {
+func TestGenProof(t *testing.T) {
 	store := Node{
 		hashoff: make(map[Pos]Digest),
 	}
@@ -82,12 +82,11 @@ func TestMembershipGen(t *testing.T) {
 	// 		hashoff: make(map[Pos]Digest),
 	// 	},
 	// }
+	tree.GenProof(2, []byte{0x0})
 
-	_, err := tree.MembershipGen(5, 0, 5)
-
-	if err != nil {
-		t.Fatalf("Error: %v\n", err)
-	}
+	// if err != nil {
+	// 	t.Fatalf("Error: %v\n", err)
+	// }
 }
 
 func TestGetDepth(t *testing.T) {
