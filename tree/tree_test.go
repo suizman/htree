@@ -51,42 +51,25 @@ func TestNewTree(t *testing.T) {
 }
 
 func TestGenProof(t *testing.T) {
+	digest := Digest{value: []byte("digest")}
 	store := Node{
 		hashoff: make(map[Pos]Digest),
 	}
 
 	tree := NewTree(
 		"barbol",
-		0,
+		2,
 		store,
 	)
 
-	events := []struct {
-		event []byte
-	}{
-		{[]byte{0x0}},
-		{[]byte{0x1}},
-		{[]byte{0x2}},
-	}
-
-	for i, c := range events {
-		i++
-		tree.Add(c.event)
-	}
-
-	// expectedV1 := Tree{
-	// 	treeId:  []byte("barbol"),
-	// 	version: 1,
-	// 	hasher:  sha256.New(),
-	// 	store: Node{
-	// 		hashoff: make(map[Pos]Digest),
-	// 	},
-	// }
-	tree.GenProof(2, []byte{0x0})
-
-	// if err != nil {
-	// 	t.Fatalf("Error: %v\n", err)
-	// }
+	store.hashoff[Pos{index: 0, layer: 0}] = digest
+	store.hashoff[Pos{index: 0, layer: 1}] = digest
+	store.hashoff[Pos{index: 1, layer: 0}] = digest
+	store.hashoff[Pos{index: 0, layer: 2}] = digest
+	store.hashoff[Pos{index: 2, layer: 1}] = digest
+	store.hashoff[Pos{index: 2, layer: 0}] = digest
+	store.hashoff[Pos{index: 3, layer: 0}] = digest
+	tree.GenProof(2, digest.value)
 }
 
 func TestGetDepth(t *testing.T) {

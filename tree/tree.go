@@ -3,6 +3,7 @@
 package tree
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
@@ -18,7 +19,7 @@ type Tree struct {
 	store   Node
 }
 
-type Audit map[Pos]string
+type Audit map[Pos][]byte
 
 type Proof struct {
 	result bool
@@ -101,47 +102,36 @@ func (t *Tree) add(digest Digest, p Pos) {
 }
 
 func (t *Tree) GenProof(index uint64, commitment []byte) bool {
-	// version := index
 	depth := t.getDepth()
 	rootPos := Pos{index: 0, layer: depth}
-	t.MembershipGen(depth, rootPos)
-	return true
-	// return bytes.Equal(expectedCommitment, commitment)
+	expectedCommitment, _ := (t.MembershipGen(depth, rootPos))
+	expectedCommitment = []byte(expectedCommitment)
+	return bytes.Equal(expectedCommitment, commitment)
 }
 
-func (t Tree) MembershipGen(depth uint64, p Pos) (*Audit, error) {
-
+func (t Tree) MembershipGen(depth uint64, p Pos) ([]byte, error) {
 	store := Audit{}
-
+	digest := Digest{value: []byte("digest")}
 	if p.index < 0 || p.index > t.version {
-		return &store, errors.New("Invalid index, 0 <= index <= version")
+		return digest.value, errors.New("Invalid index, 0 <= index <= version")
 	}
 
-	if p.layer == 0 && p.index == 0 {
-		fmt.Println("if1")
-		store[Pos{index: p.index, layer: p.layer}] = "digest" // digest from actual tree
-		fmt.Printf("%v %v\n", store, depth)
-		//p.layer++
-		// return nil, nil
-		// os.Exit(0)
-		t.MembershipGen(depth-1, p)
+	if p.index == 0 && p.layer == 0 {
+		store[Pos{index: 0, layer: 0}] = t.store.hashoff[Pos{index: 0, layer: 0}].value
+		return computeHash(digest.value, digest.value), nil
 	}
 
-	// fmt.Println(index + pow(2, layer-1))
-	// fmt.Println(uint64(math.Ceil(math.Log2(float64(t.version + 1)))))
-	if t.version <= p.layer {
-		fmt.Println("if2")
-		store[Pos{index: p.index, layer: p.layer}] = "digest" // digest from actual tree
-		fmt.Printf("Left Leaf: %v,%v\n", store, depth)
+	if t.store.hashoff[p.Left()].value != nil {
+		store[p.Left()] = t.store.hashoff[p.Left()].value
 		t.MembershipGen(depth-1, p.Left())
-	} else {
-		fmt.Println("if3")
-		store[Pos{index: p.index, layer: p.layer}] = "digest" // digest from actual tree
-		fmt.Printf("Right Leaf: %v,%v\n", store, depth)
+	}
+
+	if t.store.hashoff[p.Right()].value != nil {
+		store[p.Right()] = t.store.hashoff[p.Right()].value
 		t.MembershipGen(depth-1, p.Right())
 	}
 
-	return &store, nil
+	return computeHash(digest.value, digest.value), nil
 }
 
 func (p *Pos) Left() Pos {
@@ -171,6 +161,10 @@ func Odd(number uint64) bool {
 	// ... We cannot check for 1 remainder.
 	// ... That fails for negative numbers.
 	return !Even(number)
+}
+
+func computeHash(left, right []byte) []byte {
+	return []byte(left)
 }
 
 func (t *Tree) GetVersion() uint64 {
