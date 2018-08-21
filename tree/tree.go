@@ -14,7 +14,7 @@ import (
 
 type Tree struct {
 	treeId  []byte
-	version uint64
+	version int
 	hasher  hash.Hash
 	store   Node
 }
@@ -42,25 +42,19 @@ type Pos struct {
 }
 
 func (t *Tree) Add(Event []byte) []byte {
-
+	t.version++
 	t.hasher.Write(Event)
 
 	rootDigest := Digest{
 		value: t.hasher.Sum(nil),
 	}
 
-	rootPos := Pos{
-		index: 0,
-		layer: t.getDepth(),
-	}
-
 	// Add root digest to tree and increment version.
-	t.add(rootDigest, rootPos)
-	t.version++
+	t.add(rootDigest, t.rootPos())
 	return rootDigest.value
 }
 
-func NewTree(id string, version uint64, store Node) *Tree {
+func NewTree(id string, version int, store Node) *Tree {
 
 	return &Tree{
 		treeId:  []byte(id),
@@ -73,16 +67,17 @@ func NewTree(id string, version uint64, store Node) *Tree {
 
 func (t *Tree) add(digest Digest, p Pos) {
 
+	// fmt.Println(t.version)
 	if p.layer == 0 {
 		fmt.Printf("Leaf node  => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.store.hashoff[p] = digest
 		return
 	}
 
-	if t.version <= p.index+pow(2, p.layer-1) {
+	// fmt.Println(p.index, p.layer)
+	if uint64(t.version) <= p.index+pow(2, p.layer-1) {
 		fmt.Printf("Go left    => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.add(digest, p.Left())
-
 	} else {
 		fmt.Printf("Go right   => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.add(digest, p.Right())
@@ -112,7 +107,7 @@ func (t *Tree) GenProof(index uint64, commitment []byte) bool {
 func (t Tree) MembershipGen(depth uint64, p Pos) ([]byte, error) {
 	store := Audit{}
 	digest := Digest{value: []byte("digest")}
-	if p.index < 0 || p.index > t.version {
+	if p.index < 0 || p.index > uint64(t.version) {
 		return digest.value, errors.New("Invalid index, 0 <= index <= version")
 	}
 
@@ -167,8 +162,12 @@ func computeHash(left, right []byte) []byte {
 	return []byte(left)
 }
 
-func (t *Tree) GetVersion() uint64 {
+func (t *Tree) GetVersion() int {
 	return t.version
+}
+
+func (t *Tree) rootPos() Pos {
+	return Pos{index: 0, layer: t.getDepth()}
 }
 
 // v = tree version
@@ -179,7 +178,7 @@ func (t *Tree) Travel(p Pos) {
 		return
 	}
 
-	if t.version <= p.index+pow(2, p.layer-1) {
+	if uint64(t.version) <= p.index+pow(2, p.layer-1) {
 		fmt.Printf("Go left    => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.Travel(p.Left())
 	} else {

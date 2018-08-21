@@ -13,23 +13,20 @@ func TestAdd(t *testing.T) {
 
 	tree := NewTree(
 		"barbol",
-		0,
+		-1,
 		store,
 	)
 
 	events := []struct {
-		event []byte
+		event          []byte
+		expectedDigest []byte
 	}{
-		{[]byte{0x0}},
-		{[]byte{0x1}},
-		{[]byte{0x2}},
-		{[]byte{0x3}},
-		{[]byte{0x4}},
+		{[]byte{0x0}, []byte{0x0}},
+		{[]byte{0x1}, []byte{0x1}},
 	}
 
-	for i, c := range events {
-		i++
-		digest := tree.Add(c.event)
+	for _, test := range events {
+		digest := tree.Add(test.event)
 		fmt.Printf("New root digest created: %x\n", digest)
 	}
 
