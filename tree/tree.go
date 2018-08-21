@@ -44,11 +44,12 @@ type Pos struct {
 func (t *Tree) Add(Event []byte) []byte {
 	t.version++
 	t.hasher.Write(Event)
-
+	//z, _ := t.hasher.Write(Event)
+	// fmt.Printf("EVENT: %x\n", Event)
 	rootDigest := Digest{
 		value: t.hasher.Sum(nil),
 	}
-
+	fmt.Printf("ROOT DIGEST: %x\n", rootDigest)
 	// Add root digest to tree and increment version.
 	t.add(rootDigest, t.rootPos())
 	return rootDigest.value
@@ -67,19 +68,17 @@ func NewTree(id string, version int, store Node) *Tree {
 
 func (t *Tree) add(digest Digest, p Pos) {
 
-	// fmt.Println(t.version)
 	if p.layer == 0 {
-		fmt.Printf("Leaf node  => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
+		fmt.Printf("Leaf  => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.store.hashoff[p] = digest
 		return
 	}
 
-	// fmt.Println(p.index, p.layer)
-	if uint64(t.version) <= p.index+pow(2, p.layer-1) {
-		fmt.Printf("Go left    => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
+	if uint64(t.version) < p.index+pow(2, p.layer-1) {
+		fmt.Printf("Left => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.add(digest, p.Left())
 	} else {
-		fmt.Printf("Go right   => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
+		fmt.Printf("Right => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.add(digest, p.Right())
 	}
 
@@ -87,12 +86,14 @@ func (t *Tree) add(digest Digest, p Pos) {
 	rl := make([]byte, 2*sha256.Size)
 	copy(rl, t.store.hashoff[p.Left()].value)
 	rl = append(rl, t.store.hashoff[p.Right()].value...)
+	// fmt.Printf("%x\n", t.store.hashoff[p.Right()].value)
 
 	// Recompute hash for actual on node
 	t.hasher.Write(rl)
 	t.store.hashoff[p] = Digest{
 		value: []byte(t.hasher.Sum(nil)),
 	}
+
 	return
 }
 
