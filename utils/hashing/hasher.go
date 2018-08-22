@@ -20,13 +20,11 @@ func NewSha256Hasher() *Sha256Hasher {
 }
 
 func (s Sha256Hasher) Do(data ...[]byte) []byte {
-
 	s.underlying.Reset()
 
 	for i := 0; i < len(data); i++ {
 		s.underlying.Write(data[i])
 	}
-
 	return s.underlying.Sum(nil)[:]
 }
 

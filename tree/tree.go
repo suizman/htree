@@ -6,16 +6,18 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
-	"hash"
 	"math"
+
+	hashing "github.com/suizman/htree/utils/hashing"
 )
 
 type Tree struct {
 	treeId  []byte
 	version int
-	hasher  hash.Hash
+	hasher  hashing.Hasher
 	store   Node
 }
 
@@ -43,27 +45,23 @@ type Pos struct {
 
 func (t *Tree) Add(Event []byte) []byte {
 	t.version++
-	t.hasher.Write(Event)
-	//z, _ := t.hasher.Write(Event)
-	// fmt.Printf("EVENT: %x\n", Event)
+
 	rootDigest := Digest{
-		value: t.hasher.Sum(nil),
+		value: t.hasher.Do(Event),
 	}
-	fmt.Printf("ROOT DIGEST: %x\n", rootDigest)
 	// Add root digest to tree and increment version.
 	t.add(rootDigest, t.rootPos())
 	return rootDigest.value
 }
 
-func NewTree(id string, version int, store Node) *Tree {
+func NewTree(id string, version int, store Node, hasher hashing.Hasher) *Tree {
 
 	return &Tree{
 		treeId:  []byte(id),
 		version: version,
-		hasher:  sha256.New(),
+		hasher:  hasher,
 		store:   store,
 	}
-
 }
 
 func (t *Tree) add(digest Digest, p Pos) {
@@ -83,17 +81,17 @@ func (t *Tree) add(digest Digest, p Pos) {
 	}
 
 	// Make array with left and right child
-	rl := make([]byte, 2*sha256.Size)
-	copy(rl, t.store.hashoff[p.Left()].value)
-	rl = append(rl, t.store.hashoff[p.Right()].value...)
-	// fmt.Printf("%x\n", t.store.hashoff[p.Right()].value)
+	ll := make([]byte, sha256.Size)
+	copy(ll, t.store.hashoff[p.Left()].value)
+	ll = append(ll, t.store.hashoff[p.Right()].value...)
 
 	// Recompute hash for actual on node
-	t.hasher.Write(rl)
 	t.store.hashoff[p] = Digest{
-		value: []byte(t.hasher.Sum(nil)),
+		value: t.hasher.Do([]byte(hex.EncodeToString(ll))),
 	}
 
+	// fmt.Printf("%x\n", ll)
+	// fmt.Printf("%x\n", t.store.hashoff[p])
 	return
 }
 
