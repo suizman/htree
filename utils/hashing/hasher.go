@@ -4,22 +4,30 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"hash"
 )
 
 type Hasher interface {
 	Do(...[]byte) []byte
 }
 
-type Sha256Hasher struct{}
+type Sha256Hasher struct {
+	underlying hash.Hash
+}
+
+func NewSha256Hasher() *Sha256Hasher {
+	return &Sha256Hasher{underlying: sha256.New()}
+}
 
 func (s Sha256Hasher) Do(data ...[]byte) []byte {
-	hasher := sha256.New()
+
+	s.underlying.Reset()
 
 	for i := 0; i < len(data); i++ {
-		hasher.Write(data[i])
+		s.underlying.Write(data[i])
 	}
 
-	return hasher.Sum(nil)[:]
+	return s.underlying.Sum(nil)[:]
 }
 
 func StringHash(s string) string {
