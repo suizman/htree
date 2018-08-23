@@ -4,7 +4,6 @@ package tree
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
@@ -46,12 +45,14 @@ type Pos struct {
 func (t *Tree) Add(Event []byte) []byte {
 	t.version++
 
-	rootDigest := Digest{
+	eventDigest := Digest{
 		value: t.hasher.Do(Event),
 	}
-	// Add root digest to tree and increment version.
-	t.add(rootDigest, t.rootPos())
-	return rootDigest.value
+	// Add digest to tree and increment version.
+	t.add(eventDigest, t.rootPos())
+
+	// Output new rootDigest
+	return t.store.hashoff[t.rootPos()].value
 }
 
 func NewTree(id string, version int, store Node, hasher hashing.Hasher) *Tree {
@@ -72,26 +73,24 @@ func (t *Tree) add(digest Digest, p Pos) {
 		return
 	}
 
-	if uint64(t.version) < p.index+pow(2, p.layer-1) {
-		fmt.Printf("Left => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
+	if uint64(t.version) < p.Right().index {
+		fmt.Printf("Left  => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.add(digest, p.Left())
 	} else {
 		fmt.Printf("Right => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
 		t.add(digest, p.Right())
 	}
 
+	var lefthash, righthash []byte
 	// Make array with left and right child
-	ll := make([]byte, sha256.Size)
-	copy(ll, t.store.hashoff[p.Left()].value)
-	ll = append(ll, t.store.hashoff[p.Right()].value...)
+	lefthash = []byte(hex.EncodeToString(t.store.hashoff[p.Left()].value))
+	righthash = []byte(hex.EncodeToString(t.store.hashoff[p.Right()].value))
 
 	// Recompute hash for actual on node
 	t.store.hashoff[p] = Digest{
-		value: t.hasher.Do([]byte(hex.EncodeToString(ll))),
+		value: t.hasher.Do(lefthash, righthash),
 	}
 
-	// fmt.Printf("%x\n", ll)
-	// fmt.Printf("%x\n", t.store.hashoff[p])
 	return
 }
 
