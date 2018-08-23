@@ -81,10 +81,9 @@ func (t *Tree) add(digest Digest, p Pos) {
 		t.add(digest, p.Right())
 	}
 
-	var lefthash, righthash []byte
 	// Make array with left and right child
-	lefthash = []byte(hex.EncodeToString(t.store.hashoff[p.Left()].value))
-	righthash = []byte(hex.EncodeToString(t.store.hashoff[p.Right()].value))
+	lefthash := HexEncode(t.store.hashoff[p.Left()].value)
+	righthash := HexEncode(t.store.hashoff[p.Right()].value)
 
 	// Recompute hash for actual on node
 	t.store.hashoff[p] = Digest{
@@ -128,32 +127,17 @@ func (t Tree) MembershipGen(depth uint64, p Pos) ([]byte, error) {
 }
 
 func (p *Pos) Left() Pos {
-
 	return Pos{
 		index: p.index,
 		layer: p.layer - 1,
 	}
-
 }
 
 func (p *Pos) Right() Pos {
-
 	return Pos{
 		index: p.index + pow(2, p.layer-1),
 		layer: p.layer - 1,
 	}
-
-}
-
-func Even(number uint64) bool {
-	return number%2 == 0
-}
-
-func Odd(number uint64) bool {
-	// Odd should return not even.
-	// ... We cannot check for 1 remainder.
-	// ... That fails for negative numbers.
-	return !Even(number)
 }
 
 func computeHash(left, right []byte) []byte {
@@ -166,25 +150,6 @@ func (t *Tree) GetVersion() int {
 
 func (t *Tree) rootPos() Pos {
 	return Pos{index: 0, layer: t.getDepth()}
-}
-
-// v = tree version
-func (t *Tree) Travel(p Pos) {
-
-	if p.layer == 0 {
-		fmt.Printf("Leaf node  => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
-		return
-	}
-
-	if uint64(t.version) <= p.index+pow(2, p.layer-1) {
-		fmt.Printf("Go left    => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
-		t.Travel(p.Left())
-	} else {
-		fmt.Printf("Go right   => Index: %v | Layer: %v | Version: %v\n", p.index, p.layer, t.version)
-		t.Travel(p.Right())
-	}
-
-	return
 }
 
 func (t *Tree) getDepth() uint64 {
@@ -201,4 +166,8 @@ func uInt64AsBytes(i uint64) []byte {
 	valuebytes := make([]byte, 8)
 	binary.LittleEndian.PutUint64(valuebytes, i)
 	return valuebytes
+}
+
+func HexEncode(data []byte) []byte {
+	return []byte(hex.EncodeToString(data))
 }
