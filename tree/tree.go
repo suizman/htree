@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"math"
 
@@ -93,37 +92,32 @@ func (t *Tree) add(digest Digest, p Pos) {
 	return
 }
 
-func (t *Tree) GenProof(index uint64, commitment []byte) bool {
+func (t *Tree) GenProof(index uint64, expectedCommitment []byte) bool {
 	depth := t.getDepth()
 	rootPos := Pos{index: 0, layer: depth}
-	expectedCommitment, _ := (t.MembershipGen(depth, rootPos))
-	expectedCommitment = []byte(expectedCommitment)
+	commitment, _ := (t.MembershipGen(depth, rootPos))
 	return bytes.Equal(expectedCommitment, commitment)
 }
 
 func (t Tree) MembershipGen(depth uint64, p Pos) ([]byte, error) {
-	store := Audit{}
-	digest := Digest{value: []byte("digest")}
-	if p.index < 0 || p.index > uint64(t.version) {
-		return digest.value, errors.New("Invalid index, 0 <= index <= version")
-	}
 
-	if p.index == 0 && p.layer == 0 {
-		store[Pos{index: 0, layer: 0}] = t.store.hashoff[Pos{index: 0, layer: 0}].value
-		return computeHash(digest.value, digest.value), nil
-	}
+	store := Audit{}
+	lefthash := HexEncode(t.store.hashoff[p.Left()].value)
+	righthash := HexEncode(t.store.hashoff[p.Right()].value)
 
 	if t.store.hashoff[p.Left()].value != nil {
 		store[p.Left()] = t.store.hashoff[p.Left()].value
+	} else {
 		t.MembershipGen(depth-1, p.Left())
 	}
 
 	if t.store.hashoff[p.Right()].value != nil {
 		store[p.Right()] = t.store.hashoff[p.Right()].value
+	} else {
 		t.MembershipGen(depth-1, p.Right())
 	}
 
-	return computeHash(digest.value, digest.value), nil
+	return t.computeHash(lefthash, righthash), nil
 }
 
 func (p *Pos) Left() Pos {
@@ -140,8 +134,8 @@ func (p *Pos) Right() Pos {
 	}
 }
 
-func computeHash(left, right []byte) []byte {
-	return []byte(left)
+func (t *Tree) computeHash(left, right []byte) []byte {
+	return t.hasher.Do(left, right)
 }
 
 func (t *Tree) GetVersion() int {
