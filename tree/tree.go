@@ -117,6 +117,8 @@ func (t Tree) MembershipGen(depth uint64, p Pos) ([]byte, error) {
 		t.MembershipGen(depth-1, p.Right())
 	}
 
+	fmt.Printf("Left: %x Right: %x\n", t.store.hashoff[p.Left()].value, t.store.hashoff[p.Right()].value)
+	fmt.Printf("%x\n", t.computeHash(lefthash, righthash))
 	return t.computeHash(lefthash, righthash), nil
 }
 
